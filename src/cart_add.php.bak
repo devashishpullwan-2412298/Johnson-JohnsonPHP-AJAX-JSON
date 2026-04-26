@@ -1,0 +1,91 @@
+<?php
+// -------------------------------
+// DEBUG MODE (keep ON while testing)
+// -------------------------------
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+require_once __DIR__ . '/config/db.php';
+
+// REQUIRE LOGIN
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../public/login.php");
+    exit;
+}
+
+// ONLY ALLOW POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit("Method Not Allowed");
+}
+
+$user_id     = $_SESSION['user_id'];
+$medicine_id = intval($_POST['medicine_id'] ?? 0);
+$quantity    = intval($_POST['quantity'] ?? 1);
+
+if ($medicine_id <= 0) {
+    die("Invalid medicine ID");
+}
+
+$db = getPDO();
+
+// Check if medicine exists
+$stmt = $db->prepare("
+    SELECT medicine_id, stock 
+    FROM Medicines
+    WHERE medicine_id = :id
+");
+$stmt->execute([':id' => $medicine_id]);
+$medicine = $stmt->fetch();
+
+if (!$medicine) {
+    die("Medicine not found");
+}
+
+if ($medicine['stock'] <= 0) {
+    die("Out of stock");
+}
+
+// Check if already in cart
+$stmt = $db->prepare("
+    SELECT cart_id, quantity 
+    FROM cart
+    WHERE user_id = :uid
+      AND medicine_id = :mid
+");
+$stmt->execute([
+    ':uid' => $user_id,
+    ':mid' => $medicine_id
+]);
+$cartItem = $stmt->fetch();
+
+if ($cartItem) {
+    // Update quantity
+    $newQty = $cartItem['quantity'] + $quantity;
+
+    $update = $db->prepare("
+        UPDATE cart
+        SET quantity = :q
+        WHERE cart_id = :cid
+    ");
+    $update->execute([
+        ':q' => $newQty,
+        ':cid' => $cartItem['cart_id']
+    ]);
+} else {
+    // Insert new cart item
+    $insert = $db->prepare("
+        INSERT INTO cart (user_id, medicine_id, quantity, created_at)
+        VALUES (:uid, :mid, :qty, NOW())
+    ");
+    $insert->execute([
+        ':uid' => $user_id,
+        ':mid' => $medicine_id,
+        ':qty' => $quantity
+    ]);
+}
+
+// REDIRECT BACK
+header("Location: ../public/products.php");
+exit;

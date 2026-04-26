@@ -1,0 +1,16 @@
+<?php
+// src/common.php
+
+if (session_status() === PHP_SESSION_NONE) {
+}
+
+function isLoggedIn() {
+    return isset($_SESSION['user_id']);
+}
+
+function requireLogin() {
+    if (!isLoggedIn()) {
+        header("Location: /online_pharmacy_full/public/login.php");
+        exit;
+    }
+}

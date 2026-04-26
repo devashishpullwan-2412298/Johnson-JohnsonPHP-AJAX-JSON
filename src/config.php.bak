@@ -1,0 +1,8 @@
+<?php
+// src/config.php
+// DO NOT define getPDO here. Use the existing db.php connection.
+
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/common.php';
+
+session_start();

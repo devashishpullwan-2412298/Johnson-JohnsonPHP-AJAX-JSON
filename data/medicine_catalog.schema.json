@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Medicine catalog export",
+  "type": "object",
+  "required": ["generated_at", "source", "total", "medicines"],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 3
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "medicines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "medicine_id",
+          "name",
+          "category",
+          "price",
+          "stock",
+          "prescription_needed"
+        ],
+        "properties": {
+          "medicine_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "category": {
+            "type": ["string", "null"]
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "prescription_needed": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

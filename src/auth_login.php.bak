@@ -1,0 +1,64 @@
+<?php
+// DEBUG (keep while testing)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Start session BEFORE any output
+
+require_once __DIR__ . '/config/db.php';
+
+// Only allow POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit("Method not allowed");
+}
+
+// Inputs
+$email = trim($_POST['email'] ?? '');
+$pass  = trim($_POST['password'] ?? '');
+
+// Validation
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    exit("Invalid email format");
+}
+if (strlen($pass) < 8) {
+    exit("Password too short");
+}
+
+$db = getPDO();
+
+try {
+    // NOTE: MySQL is case-sensitive on some systems (Users vs users)
+    $stmt = $db->prepare("
+        SELECT user_id, name, email, password AS pwd, role 
+        FROM Users
+        WHERE email = :em
+    ");
+    $stmt->execute([':em' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$user) {
+        exit("No account found with that email.");
+    }
+
+    if (!password_verify($pass, $user['pwd'])) {
+        exit("Incorrect password.");
+    }
+
+    // Store session values
+    $_SESSION['user_id'] = $user['user_id'];
+    $_SESSION['role']    = $user['role'];
+    $_SESSION['name']    = $user['name'];
+
+    // Redirect
+    if ($user['role'] === 'pharmacist') {
+        header("Location: ../public/admin/admin_dashboard.php");
+    } else {
+        header("Location: ../public/products.php");
+    }
+    exit();
+
+} catch (Exception $e) {
+    exit("ERROR: " . $e->getMessage());
+}

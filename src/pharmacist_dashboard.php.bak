@@ -1,0 +1,41 @@
+<?php
+require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/config.php';
+if(($_SESSION['role'] ?? '') !== 'pharmacist') { echo 'Forbidden - pharmacists only'; exit; }
+$db = getPDO();
+
+if($_SERVER['REQUEST_METHOD'] === 'POST'){
+    $token = $_POST['csrf_token'] ?? '';
+    if(!verify_csrf($token)) die('Invalid CSRF');
+    $action = $_POST['action'] ?? '';
+    $order_id = intval($_POST['order_id'] ?? 0);
+    if($action === 'approve'){
+        $stmt = $db->prepare('UPDATE orders SET status = :s WHERE id = :id');
+        $stmt->execute([':s'=>'approved', ':id'=>$order_id]);
+    } elseif($action === 'reject'){
+        $stmt = $db->prepare('UPDATE orders SET status = :s WHERE id = :id');
+        $stmt->execute([':s'=>'rejected', ':id'=>$order_id]);
+    }
+}
+
+$stmt = $db->query("SELECT id,user_id,total,address,prescription_path,status,created_at FROM orders WHERE status = 'pending' ORDER BY created_at ASC");
+$orders = $stmt->fetchAll();
+?>
+<!doctype html><html><head><meta charset="utf-8"><title>Pharmacist Dashboard</title><link rel="stylesheet" href="../assets/css/styles.css"></head><body>
+<h2>Pending Orders</h2>
+<?php if(empty($orders)) echo '<p>No pending orders.</p>'; else: ?>
+  <?php foreach($orders as $o): ?>
+    <div style="border:1px solid #e6f2ea;padding:.6rem;margin-bottom:.6rem;">
+      <p><strong>Order #<?php echo (int)$o['id']; ?></strong> - Total <?php echo number_format($o['total'],2); ?> - <?php echo htmlspecialchars($o['created_at']); ?></p>
+      <p>Address: <?php echo htmlspecialchars($o['address']); ?></p>
+      <p>Prescription: <a href="../uploads/<?php echo htmlspecialchars($o['prescription_path']); ?>" target="_blank">View</a></p>
+      <form method="post" style="display:inline-block">
+        <input type="hidden" name="csrf_token" value="<?php echo generate_csrf(); ?>">
+        <input type="hidden" name="order_id" value="<?php echo (int)$o['id']; ?>">
+        <button name="action" value="approve" class="button">Approve</button>
+        <button name="action" value="reject" class="button" style="background:#c94d4d">Reject</button>
+      </form>
+    </div>
+  <?php endforeach; ?>
+<?php endif; ?>
+</body></html>

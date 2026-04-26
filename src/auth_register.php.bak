@@ -1,0 +1,49 @@
+<?php
+require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/config.php';
+
+
+// Only allow POST requests
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit("Method not allowed");
+}
+
+// Get form inputs
+$name     = trim($_POST['fullname'] ?? '');
+$email    = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+$role     = $_POST['role'] ?? 'customer';
+
+// Basic validation
+if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8) {
+    die("Invalid input");
+}
+
+$db = getPDO();
+
+// 👉 FIX: CHECK USING `user_id`? No. We check email only.
+// The only problem earlier was selecting a non-existing column.
+$stmt = $db->prepare('SELECT user_id FROM users WHERE email = :email');
+$stmt->execute([':email' => $email]);
+
+if ($stmt->fetch()) {
+    die("Email already exists");
+}
+
+// Insert user → match EXACT column names in your DB
+$hash = password_hash($password, PASSWORD_DEFAULT);
+
+$stmt = $db->prepare('INSERT INTO users (name, email, password, role, created_at)
+                      VALUES (:name, :email, :password, :role, NOW())');
+
+$stmt->execute([
+    ':name'     => $name,
+    ':email'    => $email,
+    ':password' => $hash,
+    ':role'     => $role
+]);
+
+// Redirect to login
+header('Location: ../public/login.html');
+exit;
