@@ -1,0 +1,47 @@
+<?php
+require_once "../../src/common.php";
+require_once "../../src/database.php";
+
+
+// ADMIN CHECK
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.html");
+    exit;
+}
+
+$db = getPDO();
+$products = $db->query("SELECT * FROM products ORDER BY product_id DESC")->fetchAll();
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Products</title>
+    <link rel="stylesheet" href="../../assets/css/styles.css">
+</head>
+<body>
+
+<h2>Manage Products</h2>
+
+<a href="admin_products_edit.php">Add New Product</a>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th>
+    </tr>
+
+    <?php foreach ($products as $p): ?>
+        <tr>
+            <td><?= $p['product_id'] ?></td>
+            <td><?= htmlspecialchars($p['name']) ?></td>
+            <td><?= number_format($p['price'], 2) ?></td>
+            <td><?= $p['stock'] ?></td>
+            <td>
+                <a href="admin_products_edit.php?id=<?= $p['product_id'] ?>">Edit</a>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+
+</table>
+
+</body>
+</html>

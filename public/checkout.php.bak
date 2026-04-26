@@ -1,0 +1,155 @@
+<?php
+// public/checkout.php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+require_once __DIR__ . '/../src/config.php';
+
+// require login
+if (empty($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$pdo = getPDO();
+$uid = (int) $_SESSION['user_id'];
+
+// If POST -> process order
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    try {
+        // fetch cart items + price + stock
+        $stmt = $pdo->prepare("
+            SELECT c.cart_id, c.medicine_id, c.quantity, m.price, m.stock, m.name
+            FROM cart c
+            JOIN Medicines m ON c.medicine_id = m.medicine_id
+            WHERE c.user_id = :uid
+        ");
+        $stmt->execute([':uid' => $uid]);
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($items)) {
+            throw new Exception('Your cart is empty.');
+        }
+
+        // validate stock & calculate total
+        $total_price = 0.0;
+        foreach ($items as $it) {
+            $total_price += ($it['price'] * $it['quantity']);
+            if ($it['stock'] < $it['quantity']) {
+                throw new Exception("Not enough stock for: " . $it['name']);
+            }
+        }
+
+        // Begin transaction
+        $pdo->beginTransaction();
+
+        // Insert order (matching your DB schema)
+        $ins = $pdo->prepare("
+            INSERT INTO orders 
+            (user_id, total_price, order_date, status, order_type, address, phone, prescription_file)
+            VALUES (:uid, :total, NOW(), 'Pending', 'Online', '', '', '')
+        ");
+        $ins->execute([
+            ':uid' => $uid,
+            ':total' => $total_price
+        ]);
+
+        $order_id = $pdo->lastInsertId();
+
+        // Insert order items and deduct stock
+        $oiStmt = $pdo->prepare("
+            INSERT INTO OrderItems (order_id, medicine_id, quantity, subtotal)
+            VALUES (:oid, :mid, :qty, :subtotal)
+        ");
+        $updStock = $pdo->prepare("
+            UPDATE Medicines SET stock = stock - :qty WHERE medicine_id = :mid
+        ");
+
+        foreach ($items as $it) {
+            $subtotal = $it['price'] * $it['quantity'];
+
+            $oiStmt->execute([
+                ':oid' => $order_id,
+                ':mid' => $it['medicine_id'],
+                ':qty' => $it['quantity'],
+                ':subtotal' => $subtotal
+            ]);
+
+            $updStock->execute([
+                ':qty' => $it['quantity'],
+                ':mid' => $it['medicine_id']
+            ]);
+        }
+
+        // Clear cart for this user
+        $clear = $pdo->prepare("DELETE FROM cart WHERE user_id = :uid");
+        $clear->execute([':uid' => $uid]);
+
+        $pdo->commit();
+
+        // redirect to my_orders page (same folder)
+        header('Location: my_orders.php');
+        exit;
+
+    } catch (Exception $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        // show a clear error instead of blank page
+        echo "<h2>Checkout failed:</h2><pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
+        exit;
+    }
+}
+
+// If GET -> show checkout summary page
+$stmt = $pdo->prepare("
+    SELECT c.cart_id, c.quantity, m.medicine_id, m.name, m.price 
+    FROM cart c
+    JOIN Medicines m ON c.medicine_id = m.medicine_id
+    WHERE c.user_id = :uid
+");
+$stmt->execute([':uid' => $uid]);
+$cartItems = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+include __DIR__ . '/navbar.php';
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkout</title>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+<body>
+<h1>Checkout</h1>
+
+<?php if (empty($cartItems)): ?>
+    <p>Your cart is empty. <a href="products.php">Continue shopping</a></p>
+<?php else: ?>
+    <table border="1" cellpadding="8">
+        <tr><th>Medicine</th><th>Price</th><th>Qty</th><th>Subtotal</th></tr>
+        <?php $grand = 0;
+        foreach ($cartItems as $it):
+            $price = (float)($it['price'] ?? 0);
+            $qty = (int)($it['quantity'] ?? 0);
+            $sub = $price * $qty;
+            $grand += $sub;
+        ?>
+            <tr>
+                <td><?= htmlspecialchars($it['name']) ?></td>
+                <td><?= number_format($price,2) ?></td>
+                <td><?= $qty ?></td>
+                <td><?= number_format($sub,2) ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+
+    <h3>Total: Rs <?= number_format($grand,2) ?></h3>
+
+    <form method="post" action="checkout.php">
+        <button type="submit">Place Order</button>
+    </form>
+<?php endif; ?>
+
+</body>
+</html>

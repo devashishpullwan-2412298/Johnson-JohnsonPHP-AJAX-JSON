@@ -1,0 +1,28 @@
+<?php
+require_once "../../src/common.php";
+require_once "../../src/database.php";
+
+
+// ADMIN CHECK
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../login.html");
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../../assets/css/styles.css">
+</head>
+<body>
+
+<h2>Admin Dashboard</h2>
+
+<ul>
+    <li><a href="admin_products.php">Manage Products</a></li>
+    <li><a href="admin_orders.php">Manage Orders</a></li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,32 @@
+<?php
+require_once "../src/config/db.php";
+
+if(!isset($_SESSION['user_id'])){
+    header("Location: login.php");
+    exit();
+}
+
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+include "../src/templates/header.php";
+?>
+
+<h2>My Profile</h2>
+
+<form action="../src/profile_update.php" method="POST">
+    <input type="hidden" name="id" value="<?= $user['id'] ?>">
+
+    <label>Full Name</label>
+    <input type="text" name="full_name" value="<?= $user['full_name'] ?>" required>
+
+    <label>Email</label>
+    <input type="email" name="email" value="<?= $user['email'] ?>" required>
+
+    <button type="submit">Update Profile</button>
+</form>
+
+<a href="change_password.php">Change Password</a>
+
+<?php include "../src/templates/footer.php"; ?>

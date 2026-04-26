@@ -1,0 +1,68 @@
+<?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+
+require_once __DIR__ . '/../src/config.php';
+include __DIR__ . '/navbar.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$pdo = getPDO();
+$user_id = $_SESSION['user_id'];
+
+// GET CART ITEMS
+$stmt = $pdo->prepare("
+    SELECT c.cart_id, c.medicine_id, c.quantity, 
+           m.name, m.price 
+    FROM cart c
+    INNER JOIN Medicines m ON c.medicine_id = m.medicine_id
+    WHERE c.user_id = :uid
+");
+$stmt->execute([':uid' => $user_id]);
+$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$total = 0;
+?>
+
+<h2>Your Cart</h2>
+
+<?php if (empty($items)): ?>
+    <p>Your cart is empty.</p>
+<?php else: ?>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Medicine</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Subtotal</th>
+        <th>Action</th>
+    </tr>
+
+    <?php foreach ($items as $row): 
+        $subtotal = $row['price'] * $row['quantity'];
+        $total += $subtotal;
+    ?>
+    <tr>
+        <td><?= htmlspecialchars($row['name']) ?></td>
+        <td><?= $row['quantity'] ?></td>
+        <td>Rs <?= number_format($row['price'], 2) ?></td>
+        <td>Rs <?= number_format($subtotal, 2) ?></td>
+        <td>
+            <a href="cart_remove.php?id=<?= $row['cart_id'] ?>"
+               style="color:red;">Remove</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+
+</table>
+
+<h3>Total: Rs <?= number_format($total, 2) ?></h3>
+
+<a href="checkout.php" class="button">Checkout</a>
+
+<?php endif; ?>

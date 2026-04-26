@@ -1,0 +1,65 @@
+<?php
+require_once "../../src/common.php";
+require_once "../../src/database.php";
+
+
+// Only admin
+if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+    header("Location: ../login.html");
+    exit;
+}
+
+$db = getPDO();
+
+// Fetch all orders with customer info
+$stmt = $db->query("
+    SELECT o.order_id, o.user_id, o.total_amount, o.created_at,
+           u.fullname, u.email
+    FROM orders o
+    INNER JOIN users u ON o.user_id = u.user_id
+    ORDER BY o.created_at DESC
+");
+
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin - Orders</title>
+<link rel="stylesheet" href="../../assets/css/admin.css">
+</head>
+
+<body>
+
+<h2>Admin – Orders</h2>
+
+<p><a href="admin_dashboard.php">← Back to Dashboard</a></p>
+
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <th>Order ID</th>
+        <th>Customer</th>
+        <th>Email</th>
+        <th>Total</th>
+        <th>Date</th>
+        <th>View</th>
+    </tr>
+
+    <?php foreach ($orders as $o): ?>
+    <tr>
+        <td><?= esc($o['order_id']) ?></td>
+        <td><?= esc($o['fullname']) ?></td>
+        <td><?= esc($o['email']) ?></td>
+        <td>$<?= esc(number_format($o['total_amount'], 2)) ?></td>
+        <td><?= esc($o['created_at']) ?></td>
+        <td>
+            <a href="admin_order_view.php?id=<?= esc($o['order_id']) ?>">View</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+
+</table>
+
+</body>
+</html>

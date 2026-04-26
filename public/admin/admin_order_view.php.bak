@@ -1,0 +1,88 @@
+<?php
+require_once "../../src/common.php";
+require_once "../../src/database.php";
+
+
+// Only admin
+if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+    header("Location: ../login.html");
+    exit;
+}
+
+if (!isset($_GET["id"])) {
+    die("Order ID missing.");
+}
+
+$order_id = (int)$_GET["id"];
+
+$db = getPDO();
+
+// Fetch order + user info
+$stmt = $db->prepare("
+    SELECT o.order_id, o.total_amount, o.created_at,
+           u.fullname, u.email
+    FROM orders o
+    INNER JOIN users u ON o.user_id = u.user_id
+    WHERE o.order_id = :oid
+");
+$stmt->execute([':oid' => $order_id]);
+$order = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$order) {
+    die("Order not found.");
+}
+
+// Fetch order items
+$stmt = $db->prepare("
+    SELECT oi.quantity, oi.price,
+           p.product_name
+    FROM order_items oi
+    INNER JOIN products p ON oi.product_id = p.product_id
+    WHERE oi.order_id = :oid
+");
+$stmt->execute([':oid' => $order_id]);
+$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Order #<?= esc($order_id) ?></title>
+<link rel="stylesheet" href="../../assets/css/admin.css">
+</head>
+
+<body>
+
+<h2>Order Details – #<?= esc($order_id) ?></h2>
+
+<p><a href="admin_orders.php">← Back to Orders</a></p>
+
+<h3>Customer Information</h3>
+<p><strong>Name:</strong> <?= esc($order["fullname"]) ?></p>
+<p><strong>Email:</strong> <?= esc($order["email"]) ?></p>
+<p><strong>Date:</strong> <?= esc($order["created_at"]) ?></p>
+
+<h3>Items</h3>
+
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Price (each)</th>
+        <th>Total</th>
+    </tr>
+
+    <?php foreach ($items as $item): ?>
+    <tr>
+        <td><?= esc($item["product_name"]) ?></td>
+        <td><?= esc($item["quantity"]) ?></td>
+        <td>$<?= esc(number_format($item["price"], 2)) ?></td>
+        <td>$<?= esc(number_format($item["price"] * $item["quantity"], 2)) ?></td>
+    </tr>
+    <?php endforeach; ?>
+</table>
+
+<h3>Grand Total: $<?= esc(number_format($order["total_amount"], 2)) ?></h3>
+
+</body>
+</html>

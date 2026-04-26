@@ -1,0 +1,48 @@
+<?php
+// public/navbar.php
+// Safe navbar that uses absolute paths from the webroot
+if (session_status() === PHP_SESSION_NONE) {
+}
+
+// get cart count (if DB available)
+$cart_count = 0;
+try {
+    require_once __DIR__ . '/../src/config.php';
+    $pdo = getPDO();
+    if (isset($_SESSION['user_id'])) {
+        $stmt = $pdo->prepare("SELECT SUM(quantity) as total FROM cart WHERE user_id = :uid");
+        $stmt->execute([':uid' => $_SESSION['user_id']]);
+        $cart_count = (int) $stmt->fetchColumn();
+    }
+} catch (Throwable $e) {
+    // don't break the page if DB isn't available here
+    $cart_count = 0;
+}
+
+// base URL for links (adjust if your app mounted elsewhere)
+$base = '/online_pharmacy_full/public';
+?>
+<style>
+.navbar { background:#2c3e50; padding:10px; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+.navbar a { color:#fff; text-decoration:none; margin-right:15px; font-weight:600; }
+.nav-left, .nav-right { display:flex; align-items:center; }
+</style>
+
+<div class="navbar">
+  <div class="nav-left">
+    <a href="<?= $base ?>/index.html">Home</a>
+    <a href="<?= $base ?>/products.php">Products</a>
+    <a href="<?= $base ?>/cart.php">Cart (<?= $cart_count ?>)</a>
+    <a href="<?= $base ?>/my_orders.php">My Orders</a>
+  </div>
+
+  <div class="nav-right">
+    <?php if (!empty($_SESSION['user_id'])): ?>
+      <span style="margin-right:12px">Hello, <?= htmlspecialchars($_SESSION['name'] ?? 'User') ?></span>
+      <a href="<?= $base ?>/logout.php">Logout</a>
+    <?php else: ?>
+      <a href="<?= $base ?>/login.php">Login</a>
+      <a href="<?= $base ?>/register.html">Register</a>
+    <?php endif; ?>
+  </div>
+</div>

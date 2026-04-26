@@ -1,0 +1,41 @@
+<?php
+require_once "../src/config/db.php";
+
+if(!isset($_GET['id'])){
+    die("Order not found.");
+}
+
+$order_id = $_GET['id'];
+$user_id = $_SESSION['user_id'];
+
+$stmt = $conn->prepare("
+    SELECT * FROM order_items 
+    INNER JOIN products ON order_items.product_id = products.id
+    WHERE order_items.order_id = ? AND order_items.user_id = ?
+");
+$stmt->execute([$order_id, $user_id]);
+$items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<?php include "../src/templates/header.php"; ?>
+
+<h2>Order Details</h2>
+
+<table border="1" cellpadding="10">
+    <tr>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Total</th>
+    </tr>
+
+    <?php foreach ($items as $row): ?>
+        <tr>
+            <td><?= $row['name'] ?></td>
+            <td><?= $row['quantity'] ?></td>
+            <td><?= $row['price'] ?></td>
+            <td><?= $row['price'] * $row['quantity'] ?></td>
+        </tr>
+    <?php endforeach; ?>
+</table>
+
+<?php include "../src/templates/footer.php"; ?>

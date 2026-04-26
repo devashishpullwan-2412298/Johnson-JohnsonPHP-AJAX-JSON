@@ -1,0 +1,29 @@
+<?php
+require_once __DIR__ . '/../src/common.php';
+require_once __DIR__ . '/../src/config.php';
+
+
+$db = getPDO();
+
+$stmt = $db->query("SELECT * FROM medicines ORDER BY name ASC");
+$medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medicines</title>
+</head>
+<body>
+<h1>Medicines</h1>
+
+<?php foreach ($medicines as $m): ?>
+    <div>
+        <strong><?= htmlspecialchars($m['name']) ?></strong><br>
+        Price: <?= $m['price'] ?><br>
+        <a href="add_to_cart.php?id=<?= $m['id'] ?>">Add to Cart</a>
+    </div>
+    <hr>
+<?php endforeach; ?>
+
+</body>
+</html>

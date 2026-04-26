@@ -1,0 +1,90 @@
+<?php
+// -------------------------------
+// DEBUG (enable while testing)
+// -------------------------------
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// -------------------------------
+// SESSION + DB
+// -------------------------------
+require_once __DIR__ . '/../src/config/db.php';
+include 'navbar.php';
+
+// REQUIRE LOGIN
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// CONNECT DB
+$db = getPDO();
+
+// FETCH MEDICINES
+$stmt = $db->query("
+    SELECT 
+        medicine_id,
+        name,
+        description,
+        price,
+        stock,
+        category,
+        prescription_needed
+    FROM Medicines
+    ORDER BY name ASC
+");
+
+$medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Medicines</title>
+<link rel="stylesheet" href="../assets/css/styles.css">
+</head>
+
+<body>
+
+<h2>Available Medicines</h2>
+
+<p>Welcome, <strong><?php echo htmlspecialchars($_SESSION['name']); ?></strong>!</p>
+
+<div class="product-container">
+
+<?php foreach ($medicines as $m): ?>
+    <div class="product-card">
+
+        <img src="../assets/img/default.png" class="product-img">
+
+        <h3><?php echo htmlspecialchars($m['name']); ?></h3>
+
+        <p><?php echo htmlspecialchars($m['description']); ?></p>
+
+        <p class="price">Rs <?php echo number_format($m['price'], 2); ?></p>
+
+        <p class="stock">Stock: <?php echo $m['stock']; ?></p>
+
+        <?php if ($m['prescription_needed']): ?>
+            <p style="color: red; font-weight: bold;">* Prescription Required</p>
+        <?php endif; ?>
+
+        <?php if ($m['stock'] > 0): ?>
+            <form action="../src/cart_add.php" method="post">
+                <input type="hidden" name="medicine_id" value="<?php echo $m['medicine_id']; ?>">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="button">Add to Cart</button>
+            </form>
+        <?php else: ?>
+            <button class="button disabled" disabled>Out of Stock</button>
+        <?php endif; ?>
+
+    </div>
+<?php endforeach; ?>
+
+</div>
+
+</body>
+</html>
