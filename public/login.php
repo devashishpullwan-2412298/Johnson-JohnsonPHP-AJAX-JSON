@@ -108,11 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><strong>Track progress:</strong> Check order status, view details, and keep your profile information up to date.</li>
             </ul>
         </section>
-
-        <div class="auth-social">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
-        </div>
     </div>
 </div>
 </body>

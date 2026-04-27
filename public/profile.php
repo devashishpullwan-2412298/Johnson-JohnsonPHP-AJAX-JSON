@@ -22,6 +22,7 @@ if ($display_name === '') {
 <head>
     <title>My Profile</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <?php include __DIR__ . '/navbar.php'; ?>
@@ -90,3 +91,4 @@ if ($display_name === '') {
 </div>
 </body>
 </html>
+<?php include __DIR__ . '/../src/templates/footer.php'; ?>

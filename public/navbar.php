@@ -30,27 +30,41 @@ if ($logged_in) {
 .nav-pill { background:rgba(255,255,255,0.14); border-radius:999px; padding:8px 14px; font-weight:600; }
 </style>
 <div class="navbar">
+
   <div class="nav-left">
+    
+    <div class="logo">💊 Johnson & Johnson</div>
+
+    <a href="<?= esc($base . '/index.php') ?>">Home</a>
     <a href="<?= esc($base . '/products.php') ?>">Products</a>
-    <a href="<?= esc($base . '/cart.php') ?>">Cart (<?= $cart_count ?>)</a>
+
+    <a href="<?= esc($base . '/cart.php') ?>">
+      Cart <span class="cart-badge"><?= $cart_count ?></span>
+    </a>
+
     <?php if ($logged_in): ?>
       <a href="<?= esc($base . '/my_orders.php') ?>">My Orders</a>
       <a href="<?= esc($base . '/profile.php') ?>">Profile</a>
     <?php endif; ?>
+
     <?php if ($role === 'admin'): ?>
-      <a href="<?= esc($base . '/admin/admin_dashboard.php') ?>">Admin Panel</a>
+      <a href="<?= esc($base . '/admin/admin_dashboard.php') ?>">Admin</a>
     <?php endif; ?>
+
     <?php if ($role === 'pharmacist'): ?>
-      <a href="<?= esc($base . '/pharmacist/pharmacist_dashboard.php') ?>">Pharmacist Dashboard</a>
+      <a href="<?= esc($base . '/pharmacist/pharmacist_dashboard.php') ?>">Pharmacist</a>
     <?php endif; ?>
+
   </div>
+
   <div class="nav-right">
     <?php if ($logged_in): ?>
-      <span class="nav-pill">Hello, <?= esc($display_name) ?></span>
-      <a href="<?= esc($base . '/logout.php') ?>">Logout</a>
+      <span class="nav-pill">Hi, <?= esc($display_name) ?></span>
+      <a href="<?= esc($base . '/logout.php') ?>" class="logout-btn">Logout</a>
     <?php else: ?>
-      <a href="<?= esc($base . '/login.php') ?>">Login</a>
-      <a href="<?= esc($base . '/register.php') ?>">Register</a>
+      <a href="<?= esc($base . '/login.php') ?>" class="login-btn">Login</a>
+      <a href="<?= esc($base . '/register.php') ?>" class="register-btn">Register</a>
     <?php endif; ?>
   </div>
+
 </div>

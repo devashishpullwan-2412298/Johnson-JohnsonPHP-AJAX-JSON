@@ -15,6 +15,7 @@ $success = flash_message('flash_success');
 <head>
 <title>Your Cart</title>
 <link rel="stylesheet" href="../assets/css/styles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <?php include __DIR__ . '/navbar.php'; ?>
@@ -46,8 +47,10 @@ $success = flash_message('flash_success');
     <?php endforeach; ?>
 </table>
 <h3>Total: Rs <?= number_format($total, 2) ?></h3>
-<a href="checkout.php" style="padding:12px 20px; background:#2d7d46; color:white; border-radius:6px; text-decoration:none;">Proceed to Checkout</a>
+<a href="checkout.php" style="padding:12px 20px; background:#2d7d46; color:white; border-radius:6px; text-decoration:none;">Proceed to Checkout
+</a>
 <?php endif; ?>
 </div>
 </body>
 </html>
+<?php include __DIR__ . '/../src/templates/footer.php'; ?>

@@ -39,6 +39,7 @@ function medicine_image_path(array $medicine, string $imageDir, string $imageBas
 <head>
     <title>Products</title>
     <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 <?php include __DIR__ . '/navbar.php'; ?>
@@ -119,3 +120,4 @@ function medicine_image_path(array $medicine, string $imageDir, string $imageBas
 </div>
 </body>
 </html>
+<?php include __DIR__ . '/../src/templates/footer.php'; ?>
